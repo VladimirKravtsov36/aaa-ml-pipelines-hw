@@ -7,7 +7,9 @@ import seaborn as sns
 import yaml
 import mlflow
 
-from lib.train import load_dict, save_dict, METRICS
+from sklearn.metrics import classification_report
+
+from lib.train import load_dict, save_dict, METRICS, save_txt_data
 
 def eval():
     with open('params.yaml', 'r') as f:
@@ -27,10 +29,16 @@ def eval():
     for metric_name in config['metrics']:
         metrics[metric_name] = METRICS[metric_name](data['test_y'], preds)
 
+    report = classification_report(data['test_y'], preds)
+    save_txt_data(report, 'data/eval_classification_report.txt')
+    mlflow.log_artifact('data/eval_classification_report.txt')
+
     save_dict(metrics, 'data/metrics.json')
 
     sns.heatmap(pd.DataFrame(data['test_x']).corr())
     plt.savefig('data/eval/heatmap.png')
+
+    mlflow.log_artifact('data/eval/heatmap.png')
 
     params = {'run_type': 'eval'}
     for i in params_data.values():
